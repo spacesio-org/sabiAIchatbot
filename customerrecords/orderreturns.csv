@@ -1,0 +1,6 @@
+timestamp,name,order_number,reason
+2024-11-14 15:51:21,John Doe,GL78340824,Wrong size delivered
+2024-11-14 15:55:08,John Doe,GL78360824,bad product
+2024-11-14 22:08:36,mide,PJ04395424,", the shoes are too big"
+2024-11-14 22:13:39,mide,PG04395424,", the lid was open"
+2024-11-15 13:52:57,mide,GT20934566,7

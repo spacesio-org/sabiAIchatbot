@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sabi Chatbot Test UI</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .chat-container {
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 20px;
+            margin-top: 20px;
+        }
+        .message {
+            margin: 10px 0;
+            padding: 15px;
+            border-radius: 10px;
+            max-width: 80%;
+        }
+        .bot {
+            background-color: #f0f0f0;
+            margin-right: 20%;
+        }
+        .user {
+            background-color: #007bff;
+            color: white;
+            margin-left: 20%;
+        }
+        input {
+            width: calc(100% - 20px);
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        button:disabled {
+            background-color: #ccc;
+        }
+        .app-selection {
+            display: none;
+            margin: 20px 0;
+            text-align: center;
+        }
+        .app-button {
+            margin: 5px;
+            min-width: 120px;
+        }
+        #messageArea {
+            max-height: 400px;
+            overflow-y: auto;
+            margin-bottom: 20px;
+        }
+        .input-group {
+            display: flex;
+            gap: 10px;
+        }
+        .input-group input {
+            flex-grow: 1;
+        }
+    </style>
+</head>
+<body>
+    <h1>Sabi Chatbot Test UI</h1>
+    
+    <div id="nameInput" class="chat-container">
+        <div class="message bot">Hello! Please enter your name to begin:</div>
+        <div class="input-group">
+            <input type="text" id="userInput" placeholder="Enter your name">
+            <button onclick="submitName()">Submit</button>
+        </div>
+    </div>
+
+    <div id="addressInput" class="chat-container" style="display: none;">
+        <div class="message bot">Please enter your delivery address:</div>
+        <div class="input-group">
+            <input type="text" id="addressInputField" placeholder="Type /exit to exit this chat or restart">
+            <button onclick="submitAddress()">Submit</button>
+        </div>
+    </div>
+
+    <div id="appSelection" class="app-selection chat-container">
+        <div class="message bot">Which service would you like to use?</div>
+        <button class="app-button" onclick="selectApp('sabi')">Sabi Market</button>
+        <button class="app-button" onclick="selectApp('trace')">Trace</button>
+        <button class="app-button" onclick="selectApp('katsu')">Katsu Bank</button>
+    </div>
+
+    <div id="chatContainer" class="chat-container" style="display: none;">
+        <div id="messageArea"></div>
+        <div class="input-group">
+            <input type="text" id="queryInput" placeholder="Type your message... (type /exit to exit this chat or restart)">
+            <button onclick="sendMessage()">Send</button>
+        </div>
+    </div>
+
+    <script>
+        let userName = '';
+        let userAddress = '';
+        let selectedApp = '';
+        let isAddressRequired = true;
+
+        function submitName() {
+            const nameInput = document.getElementById('userInput');
+            userName = nameInput.value.trim();
+            
+            if (userName) {
+                if (userName.toLowerCase() === '/exit') {
+                    resetChat();
+                    return;
+                }
+                document.getElementById('nameInput').style.display = 'none';
+                document.getElementById('addressInput').style.display = 'block';
+            }
+        }
+
+        function submitAddress() {
+            const addressInput = document.getElementById('addressInputField');
+            userAddress = addressInput.value.trim();
+            
+            if (userAddress) {
+                if (userAddress.toLowerCase() === '/exit') {
+                    resetChat();
+                    return;
+                }
+                document.getElementById('addressInput').style.display = 'none';
+                document.getElementById('appSelection').style.display = 'block';
+                isAddressRequired = false;
+            }
+        }
+
+        function resetChat() {
+            userName = '';
+            userAddress = '';
+            selectedApp = '';
+            isAddressRequired = true;
+            document.getElementById('nameInput').style.display = 'block';
+            document.getElementById('addressInput').style.display = 'none';
+            document.getElementById('appSelection').style.display = 'none';
+            document.getElementById('chatContainer').style.display = 'none';
+            document.getElementById('userInput').value = '';
+            document.getElementById('addressInputField').value = '';
+            document.getElementById('messageArea').innerHTML = '';
+        }
+
+        function selectApp(app) {
+            selectedApp = app;
+            document.getElementById('appSelection').style.display = 'none';
+            document.getElementById('chatContainer').style.display = 'block';
+            addMessage(`Welcome to ${app.toUpperCase()}! How can I help you today?`, 'bot');
+        }
+
+        function addMessage(message, sender) {
+            const messageArea = document.getElementById('messageArea');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${sender}`;
+            messageDiv.textContent = message;
+            messageArea.appendChild(messageDiv);
+            messageArea.scrollTop = messageArea.scrollHeight;
+        }
+
+        async function sendMessage() {
+            const queryInput = document.getElementById('queryInput');
+            const query = queryInput.value.trim();
+            
+            if (query) {
+                if (query.toLowerCase() === '/exit') {
+                    resetChat();
+                    return;
+                }
+                
+                addMessage(query, 'user');
+                queryInput.value = '';
+
+                try {
+                    const response = await fetch('/chatbot', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            query: query,
+                            name: userName,
+                            app: selectedApp,
+                            address: userAddress
+                        })
+                    });
+
+                    const data = await response.json();
+                    addMessage(data.answer, 'bot');
+                } catch (error) {
+                    addMessage('Sorry, there was an error processing your request.', 'bot');
+                    console.error('Error:', error);
+                }
+            }
+        }
+
+        // Allow sending message with Enter key
+        document.getElementById('queryInput')?.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+
+        // Add Enter key support for name input
+        document.getElementById('userInput')?.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                submitName();
+            }
+        });
+
+        // Add Enter key support for address input
+        document.getElementById('addressInputField')?.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                submitAddress();
+            }
+        });
+    </script>
+</body>
+</html> 

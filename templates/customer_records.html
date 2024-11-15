@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sabi Customer Records</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .header {
+            background-color: #007bff;
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        .nav-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .tab-button {
+            padding: 10px 20px;
+            background-color: #e9ecef;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .tab-button.active {
+            background-color: #007bff;
+            color: white;
+        }
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            background-color: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .data-table th, .data-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        .data-table th {
+            background-color: #f8f9fa;
+            font-weight: bold;
+        }
+        .data-table tr:hover {
+            background-color: #f5f5f5;
+        }
+        .refresh-button {
+            padding: 10px 20px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-bottom: 20px;
+        }
+        #errorMessage {
+            color: red;
+            padding: 10px;
+            background-color: #ffe6e6;
+            border-radius: 5px;
+            margin: 10px 0;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Sabi Customer Records Dashboard</h1>
+        </div>
+
+        <div class="nav-tabs">
+            <button class="tab-button active" onclick="showTab('newOrders')">New Orders</button>
+            <button class="tab-button" onclick="showTab('returns')">Returns</button>
+            <button class="tab-button" onclick="showTab('tracking')">Order Tracking</button>
+            <button class="tab-button" onclick="showTab('callbacks')">Callbacks</button>
+        </div>
+
+        <button class="refresh-button" onclick="refreshCurrentTab()">
+            Refresh Data
+        </button>
+
+        <div id="errorMessage"></div>
+
+        <div id="dataContainer">
+            <table class="data-table" id="dataTable">
+                <thead id="tableHead"></thead>
+                <tbody id="tableBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        let currentTab = 'newOrders';
+        const endpoints = {
+            newOrders: '/sabi/sabineworders',
+            returns: '/sabi/sabireturns',
+            tracking: '/sabi/sabitracking',
+            callbacks: '/sabi/sabicallbacks'
+        };
+
+        const tableHeaders = {
+            newOrders: ['Timestamp', 'Customer Name', 'Order Details', 'Address'],
+            returns: ['Timestamp', 'Customer Name', 'Order Number', 'Reason'],
+            tracking: ['Timestamp', 'Customer Name', 'Order Number'],
+            callbacks: ['Timestamp', 'Customer Name', 'Phone Number', 'Reason']
+        };
+
+        async function fetchData(endpoint) {
+            try {
+                const response = await fetch(endpoint);
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return await response.json();
+            } catch (error) {
+                showError(`Error fetching data: ${error.message}`);
+                return [];
+            }
+        }
+
+        function showError(message) {
+            const errorDiv = document.getElementById('errorMessage');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+            setTimeout(() => {
+                errorDiv.style.display = 'none';
+            }, 5000);
+        }
+
+        function updateTable(data, headers) {
+            const thead = document.getElementById('tableHead');
+            const tbody = document.getElementById('tableBody');
+            
+            // Clear existing content
+            thead.innerHTML = '';
+            tbody.innerHTML = '';
+
+            // Add headers
+            const headerRow = document.createElement('tr');
+            headers.forEach(header => {
+                const th = document.createElement('th');
+                th.textContent = header;
+                headerRow.appendChild(th);
+            });
+            thead.appendChild(headerRow);
+
+            // Add data rows
+            data.forEach(item => {
+                const row = document.createElement('tr');
+                headers.forEach(header => {
+                    const td = document.createElement('td');
+                    // Map header names to CSV column names
+                    const columnMap = {
+                        'Timestamp': 'timestamp',
+                        'Customer Name': 'name',
+                        'Order Details': 'order_details',
+                        'Address': 'address',
+                        'Order Number': 'order_number',
+                        'Reason': 'reason',
+                        'Phone Number': 'phone_number'
+                    };
+                    td.textContent = item[columnMap[header]] || '-';
+                    row.appendChild(td);
+                });
+                tbody.appendChild(row);
+            });
+        }
+
+        async function showTab(tabName) {
+            // Update active tab
+            document.querySelectorAll('.tab-button').forEach(button => {
+                button.classList.remove('active');
+            });
+            event.target.classList.add('active');
+
+            currentTab = tabName;
+            const data = await fetchData(endpoints[tabName]);
+            updateTable(data, tableHeaders[tabName]);
+        }
+
+        function refreshCurrentTab() {
+            showTab(currentTab);
+        }
+
+        // Initial load
+        showTab('newOrders');
+    </script>
+</body>
+</html> 
