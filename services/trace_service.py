@@ -13,57 +13,53 @@ embeddings = OpenAIEmbeddings(api_key=openai_api_key)
 
 # Function to handle Trace queries
 async def handle_trace_query(query, user_name):
-    # Load Trace-specific documents and process the query
-    documents = load_documents_for_app()
-    text_chunks = limit_content_size(documents)
-
-    # Create FAISS index from text chunks
-    faiss_index = FAISS.from_texts(
-        texts=text_chunks,
-        embedding=embeddings,
-        metadatas=[{"source": f"chunk_{i}"} for i in range(len(text_chunks))]
-    )
+    # Load Trace-specific documents
+    docs_path = 'documents/trace'
+    if not os.path.exists(docs_path) or not os.listdir(docs_path):
+        return "I apologize, but I don't have enough information about TRACE at the moment. Please try again later or contact support."
     
-    retriever = faiss_index.as_retriever(
-        search_type="similarity",
-        search_kwargs={"k": 3}
-    )
-    qa_chain = RetrievalQA.from_chain_type(
-        llm=llm,
-        chain_type="stuff",
-        retriever=retriever
-    )
-
-    result = qa_chain.invoke(query)
-    return result.get('result', 'Sorry, no result found.')
-
-def load_documents_for_app(app_name):
-    # Load documents based on the app name
-    app_document_paths = {
-        "trace": "documents/Trace_buyers_guide.txt",
-    }
-    path = app_document_paths.get(app_name)
-    if path and os.path.exists(path):
-        with open(path, 'r', encoding='utf-8') as file:
-            return [file.read()]
-    return []
-
-def limit_content_size(content_list, max_tokens=2000):
-    """Limit content size while preserving complete Q&A pairs"""
-    if not content_list:
-        return []
+    try:
+        # Load and combine all documents
+        documents = []
+        for filename in os.listdir(docs_path):
+            if filename.endswith('.txt'):
+                with open(os.path.join(docs_path, filename), 'r', encoding='utf-8') as f:
+                    documents.append(f.read())
         
-    # Join all content with newlines to preserve formatting
-    combined_content = "\n".join(content_list)
-    
-    # Split content into chunks
-    text_splitter = RecursiveCharacterTextSplitter(
-        chunk_size=1000,
-        chunk_overlap=200,
-        length_function=len
-    )
-    
-    # Split text into chunks
-    texts = text_splitter.split_text(combined_content)
-    
-    return texts
+        combined_docs = "\n\n".join(documents)
+        
+        # Split text into chunks
+        text_splitter = RecursiveCharacterTextSplitter(
+            chunk_size=1000,
+            chunk_overlap=200,
+            length_function=len
+        )
+        text_chunks = text_splitter.split_text(combined_docs)
+        
+        if not text_chunks:
+            return "I apologize, but I don't have enough information to answer your question about TRACE. Please contact support for assistance."
+
+        # Create FAISS index
+        vectorstore = FAISS.from_texts(
+            texts=text_chunks,
+            embedding=embeddings,
+            metadatas=[{"source": f"chunk_{i}"} for i in range(len(text_chunks))]
+        )
+        
+        # Create QA chain
+        qa_chain = RetrievalQA.from_chain_type(
+            llm=llm,
+            chain_type="stuff",
+            retriever=vectorstore.as_retriever(
+                search_type="similarity",
+                search_kwargs={"k": 3}
+            )
+        )
+
+        # Get response
+        result = qa_chain.invoke({"query": query})
+        return result["result"]
+
+    except Exception as e:
+        print(f"Error in trace service: {str(e)}")
+        return "I apologize, but I encountered an error while processing your request. Please try again or contact support."

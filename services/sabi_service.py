@@ -16,38 +16,40 @@ embeddings = OpenAIEmbeddings(api_key=openai_api_key)
 
 # Function to handle Sabi queries
 async def handle_sabi_query(query, user_name, user_address):
-    # Load Sabi-specific documents and process the query
-    documents = load_documents_for_app()
-    text_chunks = limit_content_size(documents)
-
-    # Create FAISS index from text chunks
-    faiss_index = FAISS.from_texts(
-        texts=text_chunks,
-        embedding=embeddings,
-        metadatas=[{"source": f"chunk_{i}"} for i in range(len(text_chunks))]
-    )
-    
-    retriever = faiss_index.as_retriever(
-        search_type="similarity",
-        search_kwargs={"k": 3}
-    )
-    qa_chain = RetrievalQA.from_chain_type(
-        llm=llm,
-        chain_type="stuff",
-        retriever=retriever
-    )
-
     # Check different intents
     order_keywords = ["order", "buy", "purchase", "want", "need", "get"]
     track_keywords = ["track", "where", "status", "follow"]
-    return_keywords = ["return", "exchange", "refund"]
+    return_keywords = ["return", "exchange", "refund", "reason"]
     issue_keywords = ["issue", "problem", "complaint", "wrong"]
     callback_keywords = ["callback", "call back", "call me", "contact me"]
 
     query_lower = query.lower()
     
-    # Track order intent
-    if any(keyword in query_lower for keyword in track_keywords):
+    # First check for order number pattern regardless of keywords
+    order_number_match = re.search(r'[A-Z]{2}\d{8}', query)
+    if order_number_match:
+        order_number = order_number_match.group()
+        # Get everything after the order number as the reason
+        reason_start = query.find(order_number) + len(order_number)
+        reason_text = query[reason_start:].strip()
+        
+        # If there's text after the order number, treat it as a return request
+        if reason_text:
+            try:
+                save_return_request(user_name, order_number, reason_text)
+                return "Thank you for submitting your return request. We'll process it right away and contact you within 24 hours."
+            except Exception as e:
+                print(f"Error saving return request: {str(e)}")
+                return "There was an error processing your return request. Please try again."
+    
+    # Then check other intents
+    if any(keyword in query_lower for keyword in return_keywords):
+        return ("To process your return, please provide your order number and reason.\n"
+               "Example: Order Number: GL78340824 Reason: Wrong size delivered")
+
+    # Then check other intents...
+    elif any(keyword in query_lower for keyword in track_keywords):
+        # Track order intent
         order_number_match = re.search(r'[A-Z]{2}\d{8}', query)
         if order_number_match:
             order_number = order_number_match.group()
@@ -55,24 +57,6 @@ async def handle_sabi_query(query, user_name, user_address):
             return f"Thank you! We're tracking your order {order_number}. You'll receive updates shortly."
         else:
             return "Please provide your 10-digit order number (e.g., GL09395824) to track your order."
-
-    # Return/exchange intent
-    elif any(keyword in query_lower for keyword in return_keywords):
-        order_number_match = re.search(r'[A-Z]{2}\d{8}', query)
-        
-        # Extract reason after the order number
-        if order_number_match:
-            order_number = order_number_match.group()
-            # Get everything after the order number as the reason
-            reason_text = query[query.find(order_number) + len(order_number):].strip()
-            if reason_text:
-                save_return_request(user_name, order_number, reason_text)
-                return "Thank you for submitting your return request. We'll process it right away and contact you within 24 hours."
-            else:
-                return "Please provide a reason for your return along with the order number."
-        else:
-            return ("To process your return, please provide your order number and reason.\n"
-                   "Example: Order Number: GL78340824 Reason: Wrong size delivered")
 
     # Issue reporting intent
     elif any(keyword in query_lower for keyword in issue_keywords):
@@ -116,8 +100,45 @@ async def handle_sabi_query(query, user_name, user_address):
                "We'll process your order right away!")
 
     # If no specific intent is matched, use QA chain
-    result = qa_chain.invoke(query)
-    return result.get('result', 'Sorry, no result found.')
+    qa_chain = get_qa_chain()
+    if qa_chain:
+        try:
+            result = qa_chain.invoke({"query": query})
+            return result.get('result', 'Sorry, I could not find a relevant answer.')
+        except Exception as e:
+            return "I apologize, but I encountered an error processing your query."
+    return "I'm sorry, but I don't have enough information to answer that question."
+
+# Add this function to load and process documents
+def get_qa_chain():
+    """Create QA chain with loaded documents"""
+    # Load documents
+    documents = load_documents_for_app()
+    if not documents:
+        return None
+        
+    # Create FAISS index
+    faiss_index = FAISS.from_texts(
+        texts=documents,
+        embedding=embeddings,
+        metadatas=[{"source": f"chunk_{i}"} for i in range(len(documents))]
+    )
+    
+    # Create retriever
+    retriever = faiss_index.as_retriever(
+        search_type="similarity",
+        search_kwargs={"k": 3}
+    )
+    
+    # Create QA chain
+    qa_chain = RetrievalQA.from_chain_type(
+        llm=llm,
+        chain_type="stuff",
+        retriever=retriever
+    )
+    
+    return qa_chain
+
 def load_documents_for_app():
     """Load all documents from the Sabi Market folder"""
     folder = "documents/sabiMarket"

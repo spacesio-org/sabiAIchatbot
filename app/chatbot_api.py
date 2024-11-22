@@ -13,6 +13,12 @@ from fastapi.templating import Jinja2Templates
 from fastapi import Request
 from fastapi.middleware.cors import CORSMiddleware
 import shutil
+import csv
+from datetime import datetime
+from typing import Optional
+from app.models import FeedbackData
+from scripts.improve_responses import update_training_data, improve_response
+
 
 # Load environment variables
 load_dotenv()
@@ -158,20 +164,34 @@ async def get_chatbot_response(query_request: QueryRequest):
     If an error occurs, returns a 500 error with details.
     """
     try:
+        # Get initial response
         if query_request.app.lower() == "sabi":
-            answer = await handle_sabi_query(query_request.query, query_request.name, query_request.address)
+            initial_answer = await handle_sabi_query(query_request.query, query_request.name, query_request.address)
         elif query_request.app.lower() == "trace":
-            answer = await handle_trace_query(query_request.query, query_request.name)
+            initial_answer = await handle_trace_query(query_request.query, query_request.name)
         elif query_request.app.lower() == "katsu":
-            answer = await handle_katsu_query(query_request.query, query_request.name)
+            initial_answer = await handle_katsu_query(query_request.query, query_request.name)
         else:
             return QueryResponse(answer="Invalid app specified.")
 
-        return QueryResponse(answer=answer)
+        # Improve response if not a system message
+        if not any(msg in initial_answer for msg in [
+            "Thank you for submitting",
+            "Please provide",
+            "To process your"
+        ]):
+            improved_answer = await improve_response(
+                query_request.app,
+                query_request.query,
+                initial_answer
+            )
+            return QueryResponse(answer=improved_answer)
+
+        return QueryResponse(answer=initial_answer)
     
     except Exception as e:
         raise HTTPException(
-            status_code=500, 
+            status_code=500,
             detail=f"An error occurred while processing your request: {str(e)}"
         )
 
@@ -256,3 +276,33 @@ async def upload_document(
 @app.get("/upload", response_class=HTMLResponse)
 async def upload_ui(request: Request):
     return templates.TemplateResponse("document_upload.html", {"request": request})
+
+@app.post("/feedback")
+async def save_feedback(feedback: FeedbackData):
+    try:
+        feedback_file = f'feedback/{feedback.app}_feedback.csv'
+        os.makedirs('feedback', exist_ok=True)
+        
+        is_new_file = not os.path.exists(feedback_file)
+        mode = 'a'  # Always append
+        
+        with open(feedback_file, mode, newline='', encoding='utf-8') as f:
+            writer = csv.writer(f)
+            if is_new_file:
+                writer.writerow(['timestamp', 'query', 'response', 'rating', 'comment'])
+            writer.writerow([
+                feedback.timestamp,
+                feedback.query.replace(',', ' '),
+                feedback.response.replace(',', ' '),
+                '👍' if feedback.rating else '👎',
+                feedback.comment or ""
+            ])
+        
+        # Update training data only for positive feedback
+        if feedback.rating:
+            update_training_data(feedback.app, feedback.query, feedback.response)
+        
+        return {"status": "success"}
+    except Exception as e:
+        print(f"Feedback error: {str(e)}")
+        return {"status": "error", "detail": str(e)}

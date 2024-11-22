@@ -4,77 +4,135 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sabi Customer Records</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --dark-green: #1E3232;
+            --jade: #069F7D;
+            --olive: #627870;
+            --lime: #DFFA60;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Inter', sans-serif;
             margin: 0;
             padding: 20px;
-            background-color: #f5f5f5;
+            background-color: #f8f9fa;
+            color: var(--dark-green);
         }
+
         .container {
             max-width: 1200px;
             margin: 0 auto;
         }
+
         .header {
-            background-color: #007bff;
+            background-color: var(--dark-green);
             color: white;
-            padding: 20px;
-            border-radius: 10px;
-            margin-bottom: 20px;
+            padding: 24px;
+            border-radius: 12px;
+            margin-bottom: 24px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
+
         .nav-tabs {
             display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
+            gap: 12px;
+            margin-bottom: 24px;
         }
+
         .tab-button {
-            padding: 10px 20px;
-            background-color: #e9ecef;
+            padding: 12px 24px;
+            background-color: rgba(98, 120, 112, 0.1);
             border: none;
-            border-radius: 5px;
+            border-radius: 8px;
             cursor: pointer;
             font-size: 16px;
+            font-weight: 500;
+            color: var(--dark-green);
+            transition: all 0.3s;
+            font-family: 'Inter', sans-serif;
         }
+
         .tab-button.active {
-            background-color: #007bff;
+            background-color: var(--jade);
             color: white;
         }
+
         .data-table {
             width: 100%;
             border-collapse: collapse;
             background-color: white;
-            border-radius: 10px;
+            border-radius: 12px;
             overflow: hidden;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            border: 1px solid rgba(98, 120, 112, 0.1);
         }
+
         .data-table th, .data-table td {
-            padding: 12px;
+            padding: 16px;
             text-align: left;
-            border-bottom: 1px solid #ddd;
+            border-bottom: 1px solid rgba(98, 120, 112, 0.1);
         }
+
         .data-table th {
-            background-color: #f8f9fa;
-            font-weight: bold;
+            background-color: rgba(6, 159, 125, 0.1);
+            font-weight: 600;
+            color: var(--dark-green);
         }
+
         .data-table tr:hover {
-            background-color: #f5f5f5;
+            background-color: rgba(223, 250, 96, 0.1);
         }
+
         .refresh-button {
-            padding: 10px 20px;
-            background-color: #28a745;
+            padding: 12px 24px;
+            background-color: var(--jade);
             color: white;
             border: none;
-            border-radius: 5px;
+            border-radius: 8px;
             cursor: pointer;
-            margin-bottom: 20px;
+            font-size: 16px;
+            font-weight: 500;
+            margin-bottom: 24px;
+            transition: all 0.3s;
+            font-family: 'Inter', sans-serif;
         }
+
+        .refresh-button:hover {
+            background-color: var(--dark-green);
+            transform: translateY(-1px);
+        }
+
         #errorMessage {
-            color: red;
-            padding: 10px;
-            background-color: #ffe6e6;
-            border-radius: 5px;
-            margin: 10px 0;
+            color: var(--dark-green);
+            padding: 16px;
+            background-color: rgba(223, 250, 96, 0.2);
+            border-radius: 8px;
+            margin: 16px 0;
             display: none;
+            font-weight: 500;
+        }
+
+        @media (max-width: 768px) {
+            .nav-tabs {
+                flex-wrap: wrap;
+            }
+            
+            .tab-button {
+                flex: 1 1 calc(50% - 8px);
+            }
+
+            .data-table {
+                display: block;
+                overflow-x: auto;
+            }
         }
     </style>
 </head>

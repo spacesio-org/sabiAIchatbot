@@ -3,86 +3,205 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sabi Chatbot Test UI</title>
+    <title>Sabi Chatbot</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --dark-green: #1E3232;
+            --jade: #069F7D;
+            --olive: #627870;
+            --lime: #DFFA60;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
-            font-family: Arial, sans-serif;
-            max-width: 800px;
+            font-family: 'Inter', sans-serif;
+            max-width: 1200px;
             margin: 0 auto;
             padding: 20px;
-            background-color: #f5f5f5;
+            background-color: #f8f9fa;
+            color: var(--dark-green);
         }
+
+        h1 {
+            color: var(--dark-green);
+            text-align: center;
+            margin-bottom: 2rem;
+            font-weight: 600;
+        }
+
         .chat-container {
             background-color: white;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            padding: 20px;
-            margin-top: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            padding: 24px;
+            margin-top: 24px;
+            border: 1px solid rgba(98, 120, 112, 0.1);
         }
+
         .message {
-            margin: 10px 0;
-            padding: 15px;
-            border-radius: 10px;
-            max-width: 80%;
+            margin: 12px 0;
+            padding: 16px;
+            border-radius: 12px;
+            max-width: 85%;
+            line-height: 1.5;
         }
+
         .bot {
-            background-color: #f0f0f0;
-            margin-right: 20%;
+            background-color: rgba(6, 159, 125, 0.1);
+            margin-right: 15%;
+            color: var(--dark-green);
         }
+
         .user {
-            background-color: #007bff;
+            background-color: var(--jade);
             color: white;
-            margin-left: 20%;
+            margin-left: 15%;
         }
-        input {
-            width: calc(100% - 20px);
-            padding: 10px;
-            margin: 10px 0;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            font-size: 16px;
-        }
-        button {
-            padding: 10px 20px;
-            background-color: #007bff;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 16px;
-            transition: background-color 0.3s;
-        }
-        button:hover {
-            background-color: #0056b3;
-        }
-        button:disabled {
-            background-color: #ccc;
-        }
-        .app-selection {
-            display: none;
-            margin: 20px 0;
-            text-align: center;
-        }
-        .app-button {
-            margin: 5px;
-            min-width: 120px;
-        }
-        #messageArea {
-            max-height: 400px;
-            overflow-y: auto;
-            margin-bottom: 20px;
-        }
+
         .input-group {
             display: flex;
-            gap: 10px;
+            gap: 12px;
+            margin-top: 20px;
         }
-        .input-group input {
-            flex-grow: 1;
+
+        input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid var(--olive);
+            border-radius: 8px;
+            font-size: 16px;
+            font-family: 'Inter', sans-serif;
+            transition: border-color 0.3s;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--jade);
+        }
+
+        button {
+            padding: 12px 24px;
+            background-color: var(--jade);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            transition: all 0.3s;
+            font-family: 'Inter', sans-serif;
+        }
+
+        button:hover {
+            background-color: var(--dark-green);
+            transform: translateY(-1px);
+        }
+
+        button:disabled {
+            background-color: var(--olive);
+            cursor: not-allowed;
+        }
+
+        .app-selection {
+            display: none;
+            margin: 24px 0;
+            text-align: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .app-button {
+            margin: 6px;
+            min-width: 140px;
+        }
+
+        #messageArea {
+            max-height: 500px;
+            overflow-y: auto;
+            margin-bottom: 24px;
+            padding-right: 12px;
+        }
+
+        #messageArea::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        #messageArea::-webkit-scrollbar-track {
+            background: rgba(98, 120, 112, 0.1);
+            border-radius: 4px;
+        }
+
+        #messageArea::-webkit-scrollbar-thumb {
+            background: var(--olive);
+            border-radius: 4px;
+        }
+
+        .feedback-buttons {
+            margin-top: 8px;
+            display: flex;
+            gap: 12px;
+        }
+
+        .feedback-buttons button {
+            padding: 8px;
+            background: transparent;
+            font-size: 1.2em;
+            color: var(--olive);
+            transition: transform 0.2s;
+        }
+
+        .feedback-buttons button:hover {
+            transform: scale(1.1);
+            background: transparent;
+            color: var(--jade);
+        }
+
+        .feedback-confirmation {
+            padding: 12px;
+            margin: 12px 0;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: 500;
+        }
+
+        .feedback-confirmation.positive {
+            background-color: rgba(223, 250, 96, 0.2);
+            color: var(--dark-green);
+        }
+
+        .feedback-confirmation.negative {
+            background-color: rgba(98, 120, 112, 0.1);
+            color: var(--dark-green);
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 16px;
+            }
+
+            .message {
+                max-width: 90%;
+            }
+
+            .input-group {
+                flex-direction: column;
+            }
+
+            button {
+                width: 100%;
+            }
         }
     </style>
 </head>
 <body>
-    <h1>Sabi Chatbot Test UI</h1>
+    <h1>Sabi Chatbot</h1>
     
     <div id="nameInput" class="chat-container">
         <div class="message bot">Hello! Please enter your name to begin:</div>
@@ -120,6 +239,7 @@
         let userAddress = '';
         let selectedApp = '';
         let isAddressRequired = true;
+        let messages = {};  // Store message history
 
         function submitName() {
             const nameInput = document.getElementById('userInput');
@@ -172,10 +292,23 @@
         }
 
         function addMessage(message, sender) {
+            const messageId = Date.now().toString();
+            messages[messageId] = {
+                query: sender === 'user' ? message : null,
+                response: sender === 'bot' ? message : null
+            };
+            
             const messageArea = document.getElementById('messageArea');
             const messageDiv = document.createElement('div');
             messageDiv.className = `message ${sender}`;
             messageDiv.textContent = message;
+            
+            // Add feedback buttons only for bot responses
+            if (sender === 'bot') {
+                const feedbackButtons = addFeedbackButtons(messageId);
+                messageDiv.appendChild(feedbackButtons);
+            }
+            
             messageArea.appendChild(messageDiv);
             messageArea.scrollTop = messageArea.scrollHeight;
         }
@@ -236,6 +369,58 @@
                 submitAddress();
             }
         });
+
+        function addFeedbackButtons(messageId) {
+            const feedbackDiv = document.createElement('div');
+            feedbackDiv.className = 'feedback-buttons';
+            feedbackDiv.innerHTML = `
+                <button onclick="submitFeedback('${messageId}', 'positive')">👍</button>
+                <button onclick="submitFeedback('${messageId}', 'negative')">👎</button>
+            `;
+            return feedbackDiv;
+        }
+        function showFeedbackConfirmation(type) {
+            const confirmationDiv = document.createElement('div');
+            confirmationDiv.className = `feedback-confirmation ${type}`;
+            confirmationDiv.textContent = type === 'positive' 
+                ? 'Thank you for your positive feedback!' 
+                : 'Thank you for your feedback. We\'ll work on improving our responses.';
+            
+            document.getElementById('messageArea').appendChild(confirmationDiv);
+            
+            // Remove confirmation after 3 seconds
+            setTimeout(() => confirmationDiv.remove(), 3000);
+        }
+        async function submitFeedback(messageId, rating) {
+            try {
+                const feedbackData = {
+                    query: messages[messageId].query,
+                    response: messages[messageId].response,
+                    rating: rating === 'positive',  // This will correctly convert to boolean
+                    comment: "",
+                    app: selectedApp,
+                    timestamp: new Date().toISOString()
+                };
+
+                const response = await fetch('/feedback', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(feedbackData)
+                });
+                
+                if (response.ok) {
+                    showFeedbackConfirmation(rating === 'positive');
+                } else {
+                    const errorText = await response.text();
+                    console.error('Error submitting feedback:', errorText);
+                }
+            } catch (error) {
+                console.error('Error submitting feedback:', error);
+            }
+        }
+
     </script>
 </body>
 </html> 
